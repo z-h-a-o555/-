@@ -3,562 +3,511 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>「一眼心动」个人简介生成器</title>
-    <!-- 引入Tailwind CSS -->
+    <title>智能简历生成器 - 免费版与专业版</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    
-    <!-- 自定义Tailwind配置（莫兰迪配色） -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#8A9BA8', // 莫兰迪蓝灰（主色）
-                        secondary: '#BFA89E', // 莫兰迪暖棕（辅助色）
-                        accent: '#A8C3B0', // 莫兰迪淡绿（强调色）
-                        neutral: '#F7F5F2', // 米白背景
-                        dark: '#5D534A', // 深棕文字
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
-    
-    <!-- 自定义工具类 -->
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .input-focus {
-                @apply focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none;
-            }
-            .card-shadow {
-                @apply shadow-md hover:shadow-xl transition-shadow duration-300;
-            }
-            .btn-bounce {
-                @apply transform hover:scale-105 active:scale-95 transition-transform duration-200;
-            }
-            .text-bolder {
-                @apply font-semibold text-primary;
-            }
-        }
-    </style>
-    
     <style>
-        /* 全局动画定义 */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
+        .tab-active {
+            background-color: #3b82f6;
+            color: white;
         }
-        
-        @keyframes pulseLight {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
+        .hidden {
+            display: none;
         }
-        
-        @keyframes slideIn {
-            from { transform: translateX(30px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        .resume-section {
+            transition: all 0.3s ease;
         }
-        
-        .animate-fade-in-up {
-            animation: fadeInUp 0.5s ease-out forwards;
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
         }
-        
-        .animate-pulse-light {
-            animation: pulseLight 1.2s infinite;
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-        
-        .animate-slide-in {
-            animation: slideIn 0.4s ease-out forwards;
+        .print-area {
+            display: none;
         }
-        
-        .result-card {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        
-        .result-card.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        .input-clear {
-            animation: fadeInUp 0.3s reverse forwards;
-        }
-        
-        /* 平滑滚动 */
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        /* 自定义滚动条（提升细节体验） */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background-color: #D1C9C3;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background-color: #F7F5F2;
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-area {
+                display: block;
+            }
         }
     </style>
 </head>
-<body class="bg-neutral min-h-screen font-sans text-dark">
-    <!-- 页面容器 -->
-    <div class="container mx-auto px-4 py-8 md:py-16 max-w-5xl">
-        <!-- 标题区域 -->
-        <header class="text-center mb-10 md:mb-14 animate-fade-in-up">
-            <h1 class="text-[clamp(2rem,6vw,3.2rem)] font-bold text-primary mb-3 flex items-center justify-center">
-                <i class="fa fa-user-circle-o mr-3 text-secondary" aria-hidden="true"></i>
-                个人简介生成器
-            </h1>
-            <p class="text-gray-600 text-lg md:text-xl max-w-2xl mx-auto">
-                30秒生成有温度、不生硬的专属简介 <span class="text-accent font-medium">适配简历/社交/主页</span>
-            </p>
-        </header>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
-            <!-- 输入表单区域 -->
-            <div class="bg-white rounded-2xl p-6 md:p-8 card-shadow animate-fade-in-up" style="animation-delay: 0.1s">
-                <form id="profileForm" class="space-y-6">
-                    <!-- 姓名字段 -->
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fa fa-id-card-o text-lg" aria-hidden="true"></i>
-                            </span>
-                            <input 
-                                type="text" 
-                                id="name" 
-                                name="name" 
-                                placeholder="比如：林晓、张明" 
-                                class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl input-focus transition-all duration-300 bg-neutral/50"
-                                required
-                            >
-                            <span class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-red-500 text-sm error-text">
-                                请填写姓名呀～
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- 职业字段 -->
-                    <div>
-                        <label for="occupation" class="block text-sm font-medium text-gray-700 mb-1">当前职业</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fa fa-briefcase text-lg" aria-hidden="true"></i>
-                            </span>
-                            <input 
-                                type="text" 
-                                id="occupation" 
-                                name="occupation" 
-                                placeholder="比如：产品经理、自由摄影师、大三学生" 
-                                class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl input-focus transition-all duration-300 bg-neutral/50"
-                                required
-                            >
-                            <span class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-red-500 text-sm error-text">
-                                职业不能为空哦～
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- 技能特长字段 -->
-                    <div>
-                        <label for="skills" class="block text-sm font-medium text-gray-700 mb-1">技能特长</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fa fa-star-o text-lg" aria-hidden="true"></i>
-                            </span>
-                            <input 
-                                type="text" 
-                                id="skills" 
-                                name="skills" 
-                                placeholder="用逗号分隔，比如：Excel、短视频剪辑、沟通协调" 
-                                class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl input-focus transition-all duration-300 bg-neutral/50"
-                                required
-                            >
-                            <span class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-red-500 text-sm error-text">
-                                至少填写一项技能～
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- 个人兴趣字段 -->
-                    <div>
-                        <label for="interests" class="block text-sm font-medium text-gray-700 mb-1">个人兴趣</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <i class="fa fa-heart-o text-lg" aria-hidden="true"></i>
-                            </span>
-                            <input 
-                                type="text" 
-                                id="interests" 
-                                name="interests" 
-                                placeholder="用逗号分隔，比如：露营、手账、古典乐" 
-                                class="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-xl input-focus transition-all duration-300 bg-neutral/50"
-                                required
-                            >
-                            <span class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-red-500 text-sm error-text">
-                                说说你的兴趣吧～
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- 风格选择 -->
-                    <div class="pt-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">简介风格</label>
-                        <div class="flex flex-wrap gap-3">
-                            <label class="flex items-center space-x-2 cursor-pointer">
-                                <input type="radio" name="style" value="professional" checked class="w-4 h-4 text-primary focus:ring-primary">
-                                <span class="text-sm">专业正式风（简历）</span>
-                            </label>
-                            <label class="flex items-center space-x-2 cursor-pointer">
-                                <input type="radio" name="style" value="lively" class="w-4 h-4 text-secondary focus:ring-secondary">
-                                <span class="text-sm">活泼元气风（社交）</span>
-                            </label>
-                            <label class="flex items-center space-x-2 cursor-pointer">
-                                <input type="radio" name="style" value="literary" class="w-4 h-4 text-accent focus:ring-accent">
-                                <span class="text-sm">文艺简约风（主页）</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- 按钮组 -->
-                    <div class="pt-4 flex flex-col sm:flex-row gap-3">
-                        <button 
-                            type="submit" 
-                            id="generateBtn"
-                            class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-3.5 px-6 rounded-xl flex items-center justify-center btn-bounce shadow-md hover:shadow-lg transition-all duration-300"
-                        >
-                            <i class="fa fa-magic mr-2" aria-hidden="true"></i>
-                            <span>生成个人简介</span>
-                        </button>
-                        <button 
-                            type="button" 
-                            id="resetBtn"
-                            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3.5 px-6 rounded-xl flex items-center justify-center btn-bounce transition-all duration-300"
-                        >
-                            <i class="fa fa-refresh mr-2" aria-hidden="true"></i>
-                            <span>重置重填</span>
-                        </button>
-                    </div>
-                </form>
+<body class="bg-gray-50">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-md py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fa fa-file-text text-blue-600 text-2xl mr-2"></i>
+                <h1 class="text-xl font-bold text-gray-800">智能简历生成器</h1>
             </div>
+            <div class="flex space-x-2">
+                <button id="freeTab" class="px-4 py-2 rounded-lg tab-active">免费版</button>
+                <button id="proTab" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700">专业版</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 免费版内容 -->
+    <div id="freeVersion" class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">免费个人简介生成器</h2>
+            <p class="text-gray-600 mb-6">快速生成简洁的个人简介，适合社交媒体和简单介绍</p>
             
-            <!-- 结果显示区域 -->
-            <div>
-                <div id="resultContainer" class="bg-white rounded-2xl p-6 md:p-8 card-shadow h-full flex flex-col result-card">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center">
-                            <i class="fa fa-file-text-o text-primary text-xl mr-2" aria-hidden="true"></i>
-                            <h2 class="text-xl md:text-2xl font-bold text-gray-800">你的专属简介</h2>
-                        </div>
-                        <span id="sceneTag" class="hidden px-3 py-1 bg-accent/20 text-accent text-xs rounded-full font-medium">
-                            适配简历场景
-                        </span>
-                    </div>
-                    
-                    <div id="resultContent" class="flex-grow flex items-center justify-center text-gray-500 p-4">
-                        <div class="text-center animate-fade-in-up">
-                            <i class="fa fa-quote-left text-4xl text-gray-200 mb-4 block" aria-hidden="true"></i>
-                            <p class="text-lg">填写信息并点击生成按钮</p>
-                            <p class="text-gray-400 mt-2">一键获取有温度的个人简介</p>
-                            <i class="fa fa-quote-right text-4xl text-gray-200 mt-4 block" aria-hidden="true"></i>
-                        </div>
-                    </div>
-                    
-                    <!-- 加载动画（默认隐藏） -->
-                    <div id="loadingContainer" class="flex-grow flex items-center justify-center hidden">
-                        <div class="text-center">
-                            <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-                            <p class="text-gray-600 animate-pulse-light">正在生成专属简介...</p>
-                        </div>
-                    </div>
-                    
-                    <!-- 复制按钮 -->
-                    <div class="mt-6 hidden" id="copyContainer">
-                        <button id="copyBtn" class="w-full bg-secondary hover:bg-secondary/90 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center btn-bounce transition-colors duration-300">
-                            <i class="fa fa-copy mr-2" aria-hidden="true"></i>
-                            <span>一键复制简介</span>
-                        </button>
-                    </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                    <input type="text" id="freeName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入您的姓名">
                 </div>
                 
-                <!-- 底部提示 -->
-                <div class="mt-4 text-center text-gray-500 text-xs md:text-sm">
-                    <i class="fa fa-lightbulb-o text-accent mr-1" aria-hidden="true"></i>
-                    提示：技能/兴趣填3-5项，生成的简介更饱满哦～
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">职业</label>
+                    <input type="text" id="freeJob" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入您的职业">
                 </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">技能特长</label>
+                    <input type="text" id="freeSkills" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="例如：编程、设计、写作等">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">个人兴趣</label>
+                    <input type="text" id="freeInterests" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="例如：阅读、旅行、摄影等">
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="generateFreeResume()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-300">
+                    <i class="fa fa-magic mr-2"></i>生成个人简介
+                </button>
             </div>
         </div>
         
-        <!-- 页脚 -->
-        <footer class="mt-16 md:mt-20 text-center text-gray-500 text-sm">
-            <p>© 2025 个人简介生成器 | 高颜值 · 零门槛 · 全场景适配</p>
-        </footer>
+        <!-- 免费版结果 -->
+        <div id="freeResult" class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">您的个人简介</h2>
+            
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h3 id="freeResumeName" class="text-xl font-bold text-gray-800 mb-2"></h3>
+                <p id="freeResumeJob" class="text-gray-600 mb-4"></p>
+                <div class="mb-4">
+                    <h4 class="font-semibold text-gray-700 mb-1">技能特长：</h4>
+                    <p id="freeResumeSkills" class="text-gray-600"></p>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-1">个人兴趣：</h4>
+                    <p id="freeResumeInterests" class="text-gray-600"></p>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="copyFreeResume()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300 mr-2">
+                    <i class="fa fa-copy mr-2"></i>复制内容
+                </button>
+                <button onclick="resetFreeForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300">
+                    <i class="fa fa-refresh mr-2"></i>重新生成
+                </button>
+            </div>
+        </div>
     </div>
-    
-    <!-- 复制成功提示 -->
-    <div id="copyToast" class="fixed bottom-6 right-6 bg-accent text-white px-5 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-400 flex items-center animate-slide-in">
-        <i class="fa fa-check-circle mr-2 text-xl" aria-hidden="true"></i>
-        <span>复制成功！可直接粘贴使用～</span>
+
+    <!-- 专业版内容 -->
+    <div id="proVersion" class="container mx-auto px-4 py-8 hidden">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">专业简历生成器</h2>
+                    <p class="text-gray-600">打造HR一眼相中的专业简历</p>
+                </div>
+                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">专业版</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 左列 -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">姓名 *</label>
+                        <input type="text" id="proName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入真实姓名">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">求职意向 *</label>
+                        <input type="text" id="proJobTarget" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="例如：前端开发工程师">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">联系电话 *</label>
+                        <input type="tel" id="proPhone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="请输入手机号码">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">邮箱 *</label>
+                        <input type="email" id="proEmail" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="用于接收面试通知">
+                    </div>
+                </div>
+                
+                <!-- 右列 -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">工作经验 *</label>
+                        <select id="proExperience" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">请选择工作年限</option>
+                            <option value="应届生">应届毕业生</option>
+                            <option value="1-3年">1-3年</option>
+                            <option value="3-5年">3-5年</option>
+                            <option value="5-10年">5-10年</option>
+                            <option value="10年以上">10年以上</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">最高学历 *</label>
+                        <select id="proEducation" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">请选择学历</option>
+                            <option value="大专">大专</option>
+                            <option value="本科">本科</option>
+                            <option value="硕士">硕士</option>
+                            <option value="博士">博士</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">现居城市 *</label>
+                        <input type="text" id="proCity" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="例如：北京">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 详细经历部分 -->
+            <div class="mt-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">详细经历</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">工作经历/实习经历</label>
+                        <textarea id="proWorkExperience" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="描述你的工作职责、项目经验、取得的成绩等"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">项目经验</label>
+                        <textarea id="proProjectExperience" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="描述参与过的重要项目，你在其中的角色和贡献"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">专业技能</label>
+                        <textarea id="proSkills" rows="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="例如：JavaScript, React, Python, 项目管理..."></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">自我评价</label>
+                        <textarea id="proSelfEvaluation" rows="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="简要描述你的工作态度、职业优势等"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 生成按钮 -->
+            <div class="mt-8 text-center">
+                <button onclick="generateProResume()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition duration-300">
+                    <i class="fa fa-file-text mr-2"></i>生成专业简历
+                </button>
+            </div>
+        </div>
+        
+        <!-- 专业版结果 -->
+        <div id="proResult" class="max-w-4xl mx-auto hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">您的专业简历</h2>
+            
+            <!-- 简历内容 - 表格样式 -->
+            <div class="bg-white border-2 border-gray-200 rounded-lg overflow-hidden mb-8">
+                <!-- 简历头部 -->
+                <div class="bg-blue-600 text-white p-6">
+                    <h1 id="proResumeName" class="text-3xl font-bold"></h1>
+                    <p id="proResumeJobTarget" class="text-xl opacity-90 mt-2"></p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
+                        <div><i class="fa fa-phone mr-2"></i><span id="proResumePhone"></span></div>
+                        <div><i class="fa fa-envelope mr-2"></i><span id="proResumeEmail"></span></div>
+                        <div><i class="fa fa-map-marker mr-2"></i><span id="proResumeCity"></span></div>
+                        <div><i class="fa fa-briefcase mr-2"></i><span id="proResumeExperience"></span></div>
+                    </div>
+                </div>
+                
+                <!-- 简历主体 -->
+                <div class="p-6">
+                    <!-- 教育背景 -->
+                    <div class="mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 border-b-2 border-blue-600 pb-2 mb-4">教育背景</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p id="proResumeEducation" class="text-gray-700"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- 工作经历 -->
+                    <div class="mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 border-b-2 border-blue-600 pb-2 mb-4">工作经历</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p id="proResumeWork" class="text-gray-700 whitespace-pre-line"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- 项目经验 -->
+                    <div class="mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 border-b-2 border-blue-600 pb-2 mb-4">项目经验</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p id="proResumeProject" class="text-gray-700 whitespace-pre-line"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- 专业技能 -->
+                    <div class="mb-6">
+                        <h3 class="text-xl font-bold text-gray-800 border-b-2 border-blue-600 pb-2 mb-4">专业技能</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p id="proResumeSkills" class="text-gray-700"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- 自我评价 -->
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 border-b-2 border-blue-600 pb-2 mb-4">自我评价</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p id="proResumeSelfEval" class="text-gray-700"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 付费导出区域 -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <h3 class="text-xl font-bold text-yellow-800 mb-4">🚀 升级专业版，获得精美PDF简历</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">免费版包含：</h4>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>✓ 在线预览简历</li>
+                            <li>✓ 基础模板</li>
+                            <li>✓ 文本复制功能</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">专业版仅需 <span class="text-red-600 text-xl">9.9元</span>：</h4>
+                        <ul class="text-gray-600 space-y-1">
+                            <li>✓ 精美PDF导出（无水印）</li>
+                            <li>✓ 3种专业模板选择</li>
+                            <li>✓ HR推荐格式</li>
+                            <li>✓ 优先技术支持</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <button onclick="showPaymentModal()" class="bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-300">
+                        <i class="fa fa-download mr-2"></i>立即购买PDF导出权限
+                    </button>
+                    <p class="text-sm text-gray-600 mt-2">一次购买，永久使用！支持微信/支付宝</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 打印区域（用于PDF生成） -->
+    <div id="printArea" class="print-area"></div>
+
+    <!-- 支付模态框 -->
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">购买专业版</h3>
+                <button onclick="closePaymentModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <p class="text-gray-600 mb-4">解锁专业版功能，获得精美PDF简历导出权限</p>
+                
+                <div class="bg-blue-50 p-4 rounded-lg mb-4">
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold">专业版套餐</span>
+                        <span class="text-red-600 font-bold text-xl">¥9.9</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">一次性支付，永久使用</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <i class="fa fa-check text-green-500 mr-2"></i>
+                        <span class="text-gray-700">专业简历模板</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fa fa-check text-green-500 mr-2"></i>
+                        <span class="text-gray-700">PDF导出（无水印）</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fa fa-check text-green-500 mr-2"></i>
+                        <span class="text-gray-700">HR推荐格式</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fa fa-check text-green-500 mr-2"></i>
+                        <span class="text-gray-700">优先技术支持</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t pt-4">
+                <h4 class="font-semibold text-gray-800 mb-2">支付方式</h4>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <button class="border border-gray-300 rounded-lg py-2 flex items-center justify-center hover:bg-gray-50">
+                        <i class="fa fa-wechat text-green-500 text-xl mr-2"></i>
+                        <span>微信支付</span>
+                    </button>
+                    <button class="border border-gray-300 rounded-lg py-2 flex items-center justify-center hover:bg-gray-50">
+                        <i class="fa fa-alipay text-blue-500 text-xl mr-2"></i>
+                        <span>支付宝</span>
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <p class="text-sm text-gray-600">支付成功后，我们将为您开通专业版权限</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="simulatePayment()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold w-full">
+                    立即支付 ¥9.9
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 获取DOM元素
-        const form = document.getElementById('profileForm');
-        const generateBtn = document.getElementById('generateBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const resultContainer = document.getElementById('resultContainer');
-        const resultContent = document.getElementById('resultContent');
-        const loadingContainer = document.getElementById('loadingContainer');
-        const copyBtn = document.getElementById('copyBtn');
-        const copyContainer = document.getElementById('copyContainer');
-        const copyToast = document.getElementById('copyToast');
-        const sceneTag = document.getElementById('sceneTag');
-        const errorTexts = document.querySelectorAll('.error-text');
-        const inputs = form.querySelectorAll('input[required]');
-        
-        // 表单提交事件处理
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // 表单验证
-            let isValid = true;
-            inputs.forEach((input, index) => {
-                const value = input.value.trim();
-                const errorText = errorTexts[index];
-                
-                if (!value) {
-                    input.classList.add('border-red-500');
-                    errorText.classList.remove('hidden');
-                    isValid = false;
-                } else {
-                    input.classList.remove('border-red-500');
-                    errorText.classList.add('hidden');
-                }
-            });
-            
-            if (!isValid) return;
-            
-            // 获取表单数据
-            const name = document.getElementById('name').value.trim();
-            const occupation = document.getElementById('occupation').value.trim();
-            const skills = document.getElementById('skills').value.trim().split(',').map(skill => skill.trim()).filter(Boolean);
-            const interests = document.getElementById('interests').value.trim().split(',').map(interest => interest.trim()).filter(Boolean);
-            const style = document.querySelector('input[name="style"]:checked').value;
-            
-            // 显示加载动画
-            resultContent.classList.add('hidden');
-            loadingContainer.classList.remove('hidden');
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2" aria-hidden="true"></i><span>生成中...</span>';
-            
-            // 模拟加载延迟（提升体验）
-            setTimeout(() => {
-                // 生成简介文本
-                const profileText = generateProfile(name, occupation, skills, interests, style);
-                
-                // 显示结果
-                displayResult(profileText, style);
-                
-                // 恢复按钮状态
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = '<i class="fa fa-magic mr-2" aria-hidden="true"></i><span>生成个人简介</span>';
-                
-                // 滚动到结果区域（移动设备）
-                if (window.innerWidth < 1024) {
-                    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }, 800);
+        // 标签切换功能
+        document.getElementById('freeTab').addEventListener('click', function() {
+            document.getElementById('freeVersion').classList.remove('hidden');
+            document.getElementById('proVersion').classList.add('hidden');
+            document.getElementById('freeTab').classList.add('tab-active');
+            document.getElementById('freeTab').classList.remove('bg-gray-200', 'text-gray-700');
+            document.getElementById('proTab').classList.remove('tab-active');
+            document.getElementById('proTab').classList.add('bg-gray-200', 'text-gray-700');
         });
         
-        // 生成个人简介（多风格）
-        function generateProfile(name, occupation, skills, interests, style) {
-            // 技能和兴趣的文本处理
-            const formatList = (list) => {
-                if (list.length === 1) return list[0];
-                if (list.length === 2) return `${list[0]}和${list[1]}`;
-                return list.slice(0, -1).join('、') + '和' + list[list.length - 1];
-            };
+        document.getElementById('proTab').addEventListener('click', function() {
+            document.getElementById('proVersion').classList.remove('hidden');
+            document.getElementById('freeVersion').classList.add('hidden');
+            document.getElementById('proTab').classList.add('tab-active');
+            document.getElementById('proTab').classList.remove('bg-gray-200', 'text-gray-700');
+            document.getElementById('freeTab').classList.remove('tab-active');
+            document.getElementById('freeTab').classList.add('bg-gray-200', 'text-gray-700');
+        });
+
+        // 免费版功能
+        function generateFreeResume() {
+            const name = document.getElementById('freeName').value;
+            const job = document.getElementById('freeJob').value;
+            const skills = document.getElementById('freeSkills').value;
+            const interests = document.getElementById('freeInterests').value;
             
-            // 补充语句（当技能/兴趣较少时）
-            const getSupplement = (list, type) => {
-                if (list.length >= 2) return '';
-                const skillSupplements = [
-                    '，并持续学习相关领域的新知识与技能',
-                    '，擅长将基础技能灵活运用到实际场景中',
-                    '，注重技能的深度打磨与实践落地'
-                ];
-                const interestSupplements = [
-                    '，在兴趣中寻找生活的平衡与灵感',
-                    '，通过兴趣培养多元视角与创造力',
-                    '，享受在兴趣里放松身心、充实自我的时光'
-                ];
-                return type === 'skill' ? skillSupplements[Math.floor(Math.random() * skillSupplements.length)] :
-                       interestSupplements[Math.floor(Math.random() * interestSupplements.length)];
-            };
-            
-            const skillsText = formatList(skills);
-            const interestsText = formatList(interests);
-            const skillSupplement = getSupplement(skills, 'skill');
-            const interestSupplement = getSupplement(interests, 'interest');
-            
-            // 不同风格模板
-            switch(style) {
-                case 'lively':
-                    return `Hi～ 我是${name}，一名超有活力的${occupation}！🎈 我超擅长${skillsText}${skillSupplement}，总能用创意解决各种问题～ 生活里的我超爱${interestsText}${interestSupplement}，喜欢在热爱的事物里汲取能量。性格开朗好沟通，期待认识更多志同道合的小伙伴，一起解锁更多可能呀！`;
-                
-                case 'literary':
-                    return `${name}，${occupation}。于专业领域，深耕${skillsText}${skillSupplement}，在实践中沉淀思考，在探索中寻求突破。于生活间隙，偏爱${interestsText}${interestSupplement}，在细微处感知美好，在热爱中丰盈自我。不疾不徐，向阳生长。`;
-                
-                default: // professional
-                    return `大家好，我是${name}，现任${occupation}一职。我熟练掌握${skillsText}${skillSupplement}，具备相关领域的实践经验与问题解决能力。工作中注重效率与成果，善于沟通协作，能够快速适应不同场景的工作需求。生活中，我热爱${interestsText}${interestSupplement}，这不仅丰富了我的业余生活，也培养了我良好的抗压能力与专注力。期待能在合适的平台发挥所长，与团队共同成长，创造更多价值。`;
+            if (!name || !job) {
+                alert('请至少填写姓名和职业');
+                return;
             }
+            
+            document.getElementById('freeResumeName').textContent = name;
+            document.getElementById('freeResumeJob').textContent = job;
+            document.getElementById('freeResumeSkills').textContent = skills || '未填写';
+            document.getElementById('freeResumeInterests').textContent = interests || '未填写';
+            
+            document.getElementById('freeResult').classList.remove('hidden');
+            document.getElementById('freeResult').scrollIntoView({ behavior: 'smooth' });
         }
         
-        // 显示结果
-        function displayResult(text, style) {
-            // 隐藏加载动画，显示结果
-            loadingContainer.classList.add('hidden');
-            resultContent.classList.remove('hidden');
+        function copyFreeResume() {
+            const name = document.getElementById('freeResumeName').textContent;
+            const job = document.getElementById('freeResumeJob').textContent;
+            const skills = document.getElementById('freeResumeSkills').textContent;
+            const interests = document.getElementById('freeResumeInterests').textContent;
             
-            // 更新结果内容（重点信息加粗）
-            const highlightedText = highlightKeyInfo(text);
-            resultContent.innerHTML = `<p class="text-gray-700 leading-relaxed text-base md:text-lg">${highlightedText}</p>`;
+            const text = `姓名：${name}\n职业：${job}\n技能特长：${skills}\n个人兴趣：${interests}`;
             
-            // 显示结果卡片动画
-            resultContainer.classList.add('show');
-            
-            // 显示复制按钮和场景标签
-            copyContainer.classList.remove('hidden');
-            sceneTag.classList.remove('hidden');
-            
-            // 根据风格更新场景标签
-            const sceneMap = {
-                'professional': '适配简历场景',
-                'lively': '适配社交平台',
-                'literary': '适配个人主页'
-            };
-            sceneTag.textContent = sceneMap[style];
-            
-            // 存储当前文本用于复制
-            copyBtn.dataset.text = text;
+            navigator.clipboard.writeText(text).then(function() {
+                alert('个人简介已复制到剪贴板！');
+            }, function() {
+                alert('复制失败，请手动选择文本复制');
+            });
         }
         
-        // 高亮重点信息（姓名、职业、核心技能）
-        function highlightKeyInfo(text) {
-            const name = document.getElementById('name').value.trim();
-            const occupation = document.getElementById('occupation').value.trim();
-            const skills = document.getElementById('skills').value.trim().split(',').map(skill => skill.trim()).filter(Boolean);
+        function resetFreeForm() {
+            document.getElementById('freeName').value = '';
+            document.getElementById('freeJob').value = '';
+            document.getElementById('freeSkills').value = '';
+            document.getElementById('freeInterests').value = '';
+            document.getElementById('freeResult').classList.add('hidden');
+        }
+
+        // 专业版功能
+        function generateProResume() {
+            const name = document.getElementById('proName').value;
+            const jobTarget = document.getElementById('proJobTarget').value;
+            const phone = document.getElementById('proPhone').value;
+            const email = document.getElementById('proEmail').value;
+            const experience = document.getElementById('proExperience').value;
+            const education = document.getElementById('proEducation').value;
+            const city = document.getElementById('proCity').value;
+            const workExperience = document.getElementById('proWorkExperience').value;
+            const projectExperience = document.getElementById('proProjectExperience').value;
+            const skills = document.getElementById('proSkills').value;
+            const selfEvaluation = document.getElementById('proSelfEvaluation').value;
             
-            // 重点关键词数组
-            const keyWords = [name, occupation, ...skills.slice(0, 2)]; // 只高亮前2个核心技能，避免过度高亮
+            if (!name || !jobTarget || !phone || !email) {
+                alert('请填写完整的个人信息（姓名、求职意向、电话、邮箱为必填项）');
+                return;
+            }
             
-            // 替换关键词为加粗样式
-            let result = text;
-            keyWords.forEach(word => {
-                if (word) {
-                    const regex = new RegExp(`(${word})`, 'g');
-                    result = result.replace(regex, '<span class="text-bolder">$1</span>');
+            document.getElementById('proResumeName').textContent = name;
+            document.getElementById('proResumeJobTarget').textContent = jobTarget;
+            document.getElementById('proResumePhone').textContent = phone;
+            document.getElementById('proResumeEmail').textContent = email;
+            document.getElementById('proResumeCity').textContent = city;
+            document.getElementById('proResumeExperience').textContent = experience + '经验';
+            document.getElementById('proResumeEducation').textContent = education;
+            document.getElementById('proResumeWork').textContent = workExperience || '暂无工作经历';
+            document.getElementById('proResumeProject').textContent = projectExperience || '暂无项目经验';
+            document.getElementById('proResumeSkills').textContent = skills || '暂无技能信息';
+            document.getElementById('proResumeSelfEval').textContent = selfEvaluation || '暂无自我评价';
+            
+            document.getElementById('proResult').classList.remove('hidden');
+            document.getElementById('proResult').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function showPaymentModal() {
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+        
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+        
+        function simulatePayment() {
+            alert('支付成功！感谢您购买专业版服务。\n\n我们已为您开通专业版权限，您现在可以导出PDF简历了。');
+            closePaymentModal();
+            
+            // 在实际应用中，这里应该调用真实的支付API
+            // 然后根据支付结果开通用户权限
+        }
+
+        // 输入框自动保存功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = document.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                const savedValue = localStorage.getItem(input.id);
+                if (savedValue) {
+                    input.value = savedValue;
                 }
-            });
-            
-            return result;
-        }
-        
-        // 复制功能
-        copyBtn.addEventListener('click', function() {
-            const text = this.dataset.text;
-            
-            // 创建临时文本区域实现复制
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            
-            // 显示复制成功提示
-            copyToast.classList.remove('translate-y-20', 'opacity-0');
-            
-            // 2.5秒后隐藏提示
-            setTimeout(() => {
-                copyToast.classList.add('translate-y-20', 'opacity-0');
-            }, 2500);
-        });
-        
-        // 重置功能
-        resetBtn.addEventListener('click', function() {
-            // 清空表单
-            form.reset();
-            
-            // 隐藏错误提示和红色边框
-            inputs.forEach((input, index) => {
-                input.classList.remove('border-red-500');
-                errorTexts[index].classList.add('hidden');
-                // 添加清空动画
-                input.classList.add('input-clear');
-                setTimeout(() => input.classList.remove('input-clear'), 300);
-            });
-            
-            // 重置结果区域
-            resultContent.innerHTML = `
-                <div class="text-center animate-fade-in-up">
-                    <i class="fa fa-quote-left text-4xl text-gray-200 mb-4 block" aria-hidden="true"></i>
-                    <p class="text-lg">填写信息并点击生成按钮</p>
-                    <p class="text-gray-400 mt-2">一键获取有温度的个人简介</p>
-                    <i class="fa fa-quote-right text-4xl text-gray-200 mt-4 block" aria-hidden="true"></i>
-                </div>
-            `;
-            resultContainer.classList.remove('show');
-            copyContainer.classList.add('hidden');
-            sceneTag.classList.add('hidden');
-            loadingContainer.classList.add('hidden');
-        });
-        
-        // 输入框焦点动画效果
-        inputs.forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.classList.add('scale-[1.01]');
-                this.parentElement.style.transition = 'transform 0.2s ease';
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('scale-[1.01]');
-                // 失去焦点时验证空值
-                if (!this.value.trim()) {
-                    this.classList.add('border-red-500');
-                    const errorText = this.parentElement.querySelector('.error-text');
-                    if (errorText) errorText.classList.remove('hidden');
-                } else {
-                    this.classList.remove('border-red-500');
-                    const errorText = this.parentElement.querySelector('.error-text');
-                    if (errorText) errorText.classList.add('hidden');
-                }
-            });
-            
-            // 输入时自动过滤多余空格和重复逗号
-            input.addEventListener('input', function() {
-                // 过滤多余空格
-                let value = this.value.trim().replace(/\s+/g, ' ');
-                // 过滤重复逗号
-                value = value.replace(/,+/g, ',').replace(/^,|,$/g, '');
-                this.value = value;
+                
+                input.addEventListener('input', function() {
+                    localStorage.setItem(input.id, input.value);
+                });
             });
         });
     </script>
